@@ -1,36 +1,41 @@
+using System.Text.Json;
 public class Game
 {
     private List<int> playerPoints = new List<int>();
     private List<int> computerPoints = new List<int>();
-    private BowlingStatistics statistics = new BowlingStatistics();
+    private BowlingStatistics<GameHistory> gameHistory = new();
+    private BowlingStatistics<PlayerFrequency> playerFrequency = new();
     private BowlingLane lane;
     private Player player;
     private ComputerPlayer computerPlayer;
 
     public Game()
     {
+        Console.WriteLine("Welcome to Bowling Game!");
+        Console.Write("Enter your name: ");
+        string playerName = Console.ReadLine() ?? "Player";
+        
         lane = new BowlingLane();
         IStrategy defaultStrategy = new StraightStrategy();
         IThrow defaultPower = new WeakPower(defaultStrategy);
-        player = new Player("Player", defaultPower, defaultPower);
+        player = new Player(playerName, defaultPower, defaultPower);
         computerPlayer = new ComputerPlayer("Computer", defaultPower, defaultPower);
     }
 
     public void PlayGame()
     {
-        for (int round = 1; round <= 5; round++)
+        for (int round = 1; round <= 2; round++)
         {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine($"\n=== Round {round} ===");
-            Console.ResetColor();
-
+            Console.WriteLine($"\nRound {round}");
+            
             // Spelarens tur
-            lane = new BowlingLane(); // Ny bana för varje omgång
+            lane = new BowlingLane();
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine("\n=== Player's Turn ===");
+            Console.WriteLine($"\n=== {player.Name}'s Turn ===");
             Console.ResetColor();
+            lane.Print();
 
-            for (int i = 0; i < 2; i++) // Två kast per omgång
+            for (int i = 0; i < 2; i++)
             {
                 // Välj strategi
                 Console.WriteLine("\nChoose your strategy:");
@@ -75,21 +80,21 @@ public class Game
                 if (lane.AllPinsDown())
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("All pins are down! Player wins this round!");
+                    Console.WriteLine($"All pins are down! {player.Name} wins this round!");
                     Console.ResetColor();
                     break;
                 }
             }
 
             // Datorns tur
-            lane = new BowlingLane(); // Ny bana för datorn
+            lane = new BowlingLane();
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine($"\n=== {computerPlayer.Name}'s Turn ===");
             Console.ResetColor();
 
-            for (int i = 0; i < 2; i++) // Två kast per omgång
+            for (int i = 0; i < 2; i++)
             {
-                Thread.Sleep(1000);  // Vänta 1 sekund innan datorns kast
+                Thread.Sleep(1000);
                 int computerScore = computerPlayer.PerformThrow(lane);
                 computerPoints.Add(computerScore);
 
@@ -102,12 +107,12 @@ public class Game
                 }
             }
         }
+
         Console.WriteLine("\nGame over! 5 rounds completed.");
         var (winner, playerTotal, computerTotal) = AnalyzeScores(playerPoints, computerPoints);
 
-
         Console.WriteLine("\nFinal Scores:");
-        Console.WriteLine($"Player: {playerTotal} points");
+        Console.WriteLine($"{player.Name}: {playerTotal} points");
         Console.WriteLine($"Computer: {computerTotal} points");
 
         if (winner == "Tie")
@@ -116,21 +121,35 @@ public class Game
         }
         else
         {
-            Console.WriteLine($"\n{winner} wins with {(winner == "Player" ? playerTotal : computerTotal)} points!");
+            Console.WriteLine($"\n{winner} wins with {(winner == player.Name ? playerTotal : computerTotal)} points!");
             Console.WriteLine($"Winning margin: {Math.Abs(playerTotal - computerTotal)} points");
         }
 
-        // Uppdatera statistiken
-        statistics.UpdateGameResult(
-            player.Name, 
-            playerTotal, 
-            computerPlayer.Name, 
-            computerTotal, 
-            winner
-        );
+        // Uppdatera spelhistorik
+        gameHistory.AddData(new GameHistory 
+        { 
+            PlayerName = player.Name,
+            Score = playerTotal,
+        });
 
-        // Visa statistik om så önskas
-        statistics.ShowGameStats();
+        // Uppdatera spelarfrekvens
+        playerFrequency.AddData(new PlayerFrequency 
+        { 
+            PlayerName = player.Name,
+        });
+
+        // Visa statistik
+        Console.WriteLine("\nPress Enter to see more statistics...");
+        Console.ReadLine();
+        Console.Clear();
+
+        // Visa topp 3
+        gameHistory.ShowStatistics();
+
+        // Fråga efter specifik spelare
+        Console.WriteLine("\nEnter player name to see their total games: ");
+        string searchName = Console.ReadLine() ?? "";
+        playerFrequency.ShowStatistics(searchName);
     }
 
     private (string winner, int playerTotal, int computerTotal) AnalyzeScores(List<int> playerPoints, List<int> computerPoints)
@@ -139,7 +158,7 @@ public class Game
         int computerTotal = computerPoints.Sum();
         
         string winner = playerTotal > computerTotal 
-            ? "Player"
+            ? player.Name
             : playerTotal < computerTotal 
                 ? "Computer" 
                 : "Tie";

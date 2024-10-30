@@ -1,68 +1,86 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
 
-public class BowlingStatistics
+public interface IGameData
 {
-    private List<PlayerData> playerHistory;
-    public delegate void ExportToFile<in T>(T data, string filename);
+    string PlayerName { get; }
+}
+
+public class GameHistory : IGameData
+{
+    public string PlayerName { get; set; }
+    public int Score { get; set; }
+}
+
+public class PlayerFrequency : IGameData
+{
+    public string PlayerName { get; set; }
+}
+
+public class BowlingStatistics<T> where T : IGameData
+{
+    private List<T> statistics = new();
+    private readonly string filePath;
 
     public BowlingStatistics()
     {
-        playerHistory = new List<PlayerData>();
-    }
-
-    public void UpdateGameResult(string playerName, int playerScore, string computerName, int computerScore, string winner)
-    {
-        playerHistory.Add(new PlayerData 
-        { 
-            Name = playerName, 
-            Score = playerScore,
-            IsWinner = winner == "Player"
-        });
-        
-        playerHistory.Add(new PlayerData 
-        { 
-            Name = computerName, 
-            Score = computerScore,
-            IsWinner = winner == "Computer"
-        });
-
-        ExportResults();
-    }
-
-    private void ExportResults()
-    {
-        ExportToFile<List<PlayerData>> exportResults = (List<PlayerData> data, string filename) =>
-        {
-            string resultText = "Game History:\n";
-            foreach (var player in data)
-            {
-                resultText += $"{player.Name}: {player.Score} points - {(player.IsWinner ? "Winner!" : "")}\n";
-            }
-            resultText += $"Date: {DateTime.Now}\n";
+        filePath = typeof(T) == typeof(GameHistory) 
+            ? "gamehistory.json" 
+            : "playerfrequency.json";
             
-            File.WriteAllText(filename, resultText);
-        };
-        
-        exportResults(playerHistory, "BowlingHistory.txt");
+        LoadStatistics();
     }
 
-    public void ShowGameStats()
+    private void LoadStatistics()
     {
-        Console.WriteLine($"\nTotal games played: {GetTotalGames()}");
-        Console.WriteLine($"Player wins: {GetPlayerWins()}");
-        Console.WriteLine($"Computer wins: {GetComputerWins()}");
+        if (File.Exists(filePath))
+        {
+            string jsonData = File.ReadAllText(filePath);
+            statistics = JsonSerializer.Deserialize<List<T>>(jsonData) ?? new List<T>();
+        }
     }
 
-    private int GetTotalGames() => playerHistory.Count / 2;
-    private int GetPlayerWins() => playerHistory.Count(p => p.Name == "Player" && p.IsWinner);
-    private int GetComputerWins() => playerHistory.Count(p => p.Name == "Computer" && p.IsWinner);
-}
+    private void SaveStatistics()
+    {
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        string jsonData = JsonSerializer.Serialize(statistics, options);
+        File.WriteAllText(filePath, jsonData);
+    }
 
-public class PlayerData
-{
-    public string Name { get; set; }
-    public int Score { get; set; }
-    public bool IsWinner { get; set; }
-} 
+    public void AddData(T data)
+    {
+        if (typeof(T) == typeof(GameHistory))
+        {
+            statistics.Add(data);
+            statistics = statistics.OrderByDescending(s => (s as GameHistory).Score).Take(3).ToList();
+        }
+        else if (typeof(T) == typeof(PlayerFrequency))
+        {
+            statistics.Add(data);
+        }
+        SaveStatistics();
+    }
+
+    public void ShowStatistics(string playerName = "")
+    {
+        if (typeof(T) == typeof(GameHistory))
+        {
+            Console.WriteLine("\n TOP 3 SCORES OF ALL TIME ");
+            Console.WriteLine("--------------------------------");
+            int rank = 1;
+            foreach (var score in statistics)
+            {
+                var history = score as GameHistory;
+                Console.WriteLine($"{rank++}. {history.PlayerName}: {history.Score} points");
+            }
+        }
+        else if (typeof(T) == typeof(PlayerFrequency))
+        {
+            var gamesPlayed = statistics.Count(s => s.PlayerName.Equals(playerName, StringComparison.OrdinalIgnoreCase));
+            Console.WriteLine($"\n{playerName} has played {gamesPlayed} games");
+        }
+    }
+}

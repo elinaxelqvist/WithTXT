@@ -165,9 +165,15 @@ public class ComputerPlayer
             _ => new BackSpinStrategy()
         };
 
-        PowerType = random.Next(2) == 0 
-            ? new WeakPower(strategy) 
-            : new StrongPower(strategy);
+        var pins = lane.GetPins();
+        if (pins.Any(p => p.Y >= 2))
+        {
+            PowerType = new WeakPower(strategy);
+        }
+        else
+        {
+            PowerType = new StrongPower(strategy);
+        }
 
         return throwHandler.PerformThrow(Name, PowerType, lane);
     }

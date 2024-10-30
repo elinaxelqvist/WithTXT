@@ -2,3 +2,44 @@ Game History:
 Player: 16 points - 
 Computer: 27 points - Winner!
 Date: 10/30/2024 1:04:10 PM
+
+Game History:
+Player: 30 points - Winner!
+Computer: 13 points - 
+Date: 10/30/2024 1:15:14 PM
+
+Game History:
+Player: 35 points - Winner!
+Computer: 4 points - 
+Date: 10/30/2024 1:30:22 PM
+
+Game History:
+Player: 35 points - Winner!
+Computer: 16 points - 
+Date: 10/30/2024 1:37:07 PM
+
+Game History:
+Player: 28 points - Winner!
+Computer: 13 points - 
+Date: 10/30/2024 1:58:45 PM
+
+Game History:
+ELIN: 28 points - Winner!
+Computer: 20 points - 
+Date: 10/30/2024 2:18:58 PM
+
+Game History:
+ELIN: 21 points - 
+Computer: 15 points - 
+Date: 10/30/2024 2:23:20 PM
+
+Game History:
+ELIN: 21 points - Winner!
+Computer: 18 points - 
+Date: 10/30/2024 2:27:31 PM
+
+Game History:
+ELIN: 35 points - Winner!
+Computer: 20 points - 
+Date: 10/30/2024 2:29:38 PM
+

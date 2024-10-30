@@ -79,6 +79,14 @@ public class BowlingLane
         {
             startColumn = 1;
             endColumn = 2;  // Kolumner 1 och 2 ska träffas för Straight
+            
+            // Chans för strike med straight throw
+            Random random = new Random();
+            if (random.Next(1, 101) <= 90)  // 10% chans för strike
+            {
+                startColumn = 0;
+                endColumn = 3;  // Träffa alla kolumner för en strike
+            }
         }
         else                       // Höger
         {
@@ -121,6 +129,11 @@ public class BowlingLane
     public bool AllPinsDown()
     {
         return pins.Count == 0;
+    }
+
+    public List<Coordinate> GetPins()
+    {
+        return pins;
     }
 
     public struct Coordinate
